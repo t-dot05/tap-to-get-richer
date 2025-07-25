@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tap to Get Richer</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    margin: 0; padding: 0;
+    overflow-x: hidden;
+    color: #222;
+    display: flex;
+  }
+  #signin-panel {
+    position: fixed;
+    top: 15px; right: 15px;
+    background: #fff;
+    padding: 12px 18px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    width: 240px;
+    font-size: 14px;
+    z-index: 100;
+  }
+  #signin-panel input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+  }
+  #signin-panel button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    background: #fda085;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  #signin-panel button:hover {
+    background: #f6d365;
+  }
+  #signin-panel .welcome {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  #signin-panel .signout {
+    background: #e76f51;
+    margin-top: 10px;
+  }
+
+  main {
+    flex: 1;
+    padding: 120px 40px 40px 320px; /* left padding for sidebar */
+    max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* centers children horizontally */
+  }
+  #money-display {
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 40px;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    user-select: none;
+  }
+  #tap-button {
+    padding: 24px 48px;
+    background: #ff7e5f;
+    border: none;
+    border-radius: 20px;
+    font-size: 36px;
+    color: white;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(255,126,95,0.6);
+    user-select: none;
+    transition: background 0.3s ease;
+    /* removed margin: 0 auto; because flex + align-items center */
+  }
+  #tap-button:hover {
+    background: #feb47b;
+  }
+
+  #upgrades-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    background: rgba(255,255,255,0.95);
+    box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+    padding: 40px 24px;
+    overflow-y: auto;
+    font-weight: 600;
+    color: #444;
+  }
+  #upgrades-sidebar h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ff7e5f;
+    font-size: 24px;
+  }
+  .upgrade {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 0;
+    padding: 14px 16px;
+    background: #ffecd2;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(255,236,210,0.7);
+  }
+  .upgrade button {
+    background: #f6d365;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    color: #5a4a00;
+    min-width: 90px;
+  }
+  .upgrade button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    color: #666;
+  }
+  .upgrade button:hover:not(:disabled) {
+    background: #fda085;
+  }
+
+  #multiplier-timer {
+    position: fixed;
+    top: 80px;
+    right: 270px;
+    font-weight: 700;
+    color: #b22222;
+    background: rgba(255,255,255,0.8);
+    padding: 6px 12px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    user-select: none;
+  }
+
+  /* Scrollbar for upgrades */
+  #upgrades-sidebar::-webkit-scrollbar {
+    width: 8px;
+  }
+  #upgrades-sidebar::-webkit-scrollbar-thumb {
+    background: #f6d365;
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div id="signin-panel">
+  <div id="signin-form">
+    <label for="username">Enter Username</label>
+    <input type="text" id="username" placeholder="Your name" />
+    <button id="signin-btn">Sign In / Sign Up</button>
+  </div>
+  <div id="welcome-msg" style="display:none;">
+    <div class="welcome"></div>
+    <button class="signout" id="signout-btn">Sign Out</button>
+  </div>
+</div>
+
+<div id="upgrades-sidebar">
+  <h2>Upgrades</h2>
+  <div class="upgrade">
+    <div>+1 per tap<br /><small>Cost: $10</small></div>
+    <button id="upgrade1" disabled>Buy</button>
+  </div>
+  <div class="upgrade">
+    <div>+5 per tap<br /><small>Cost: $50</small></div>
+    <button id="upgrade2" disabled>Buy</button>
+  </div>
+  <div class="upgrade">
+    <div>+20 per tap<br /><small>Cost: $200</small></div>
+    <button id="upgrade3" disabled>Buy</button>
+  </div>
+  <div class="upgrade">
+    <div>+100 taps (bulk upgrade)<br /><small>Cost: $10,000</small></div>
+    <button id="upgradeBulk" disabled>Buy</button>
+  </div>
+</div>
+
+<main>
+  <div id="money-display">$0</div>
+  <button id="tap-button">Tap Me!</button>
+</main>
+
+<div id="multiplier-timer"></div>
+
+<script>
+  let money = 0;
+  let moneyPerTap = 1;
+
+  let currentUser = null;
+  let usersData = JSON.parse(localStorage.getItem('usersData') || '{}');
+
+  let multiplierActive = false;
+  let multiplierExpireTime = 0;
+  let multiplierInterval = null;
+
+  const moneyDisplay = document.getElementById('money-display');
+  const tapBtn = document.getElementById('tap-button');
+
+  const signinPanel = document.getElementById('signin-panel');
+  const signinForm = document.getElementById('signin-form');
+  const welcomeMsg = document.getElementById('welcome-msg');
+  const welcomeText = welcomeMsg.querySelector('.welcome');
+  const signoutBtn = document.getElementById('signout-btn');
+  const multiplierTimerEl = document.getElementById('multiplier-timer');
+
+  const usernameInput = document.getElementById('username');
+  const signinBtn = document.getElementById('signin-btn');
+
+  // Upgrades info with milestones (min money required to enable)
+  const upgrades = {
+    upgrade1: { cost: 10, increase: 1, milestone: 0 },
+    upgrade2: { cost: 50, increase: 5, milestone: 50 },
+    upgrade3: { cost: 200, increase: 20, milestone: 200 },
+    upgradeBulk: { cost: 10000, increase: 100, milestone: 10000, maxTaps: 1000 }
+  };
+
+  // Update money display
+  function updateMoneyDisplay() {
+    moneyDisplay.textContent = `$${money.toLocaleString()}`;
+  }
+
+  // Update upgrade buttons: enable/disable based on milestone & money, and bulk max taps
+  function updateUpgrades() {
+    for (const id in upgrades) {
+      const upgrade = upgrades[id];
+      const btn = document.getElementById(id);
+
+      // For bulk upgrade, disable if taps >= maxTaps
+      if (id === 'upgradeBulk' && moneyPerTap >= upgrade.maxTaps) {
+        btn.disabled = true;
+        btn.textContent = 'Maxed';
+        continue;
+      } else {
+        btn.textContent = 'Buy';
+      }
+
+      if (money >= upgrade.milestone && money >= upgrade.cost) {
+        btn.disabled = false;
+      } else {
+        btn.disabled = true;
+      }
+    }
+  }
+
+  // Handle tap button
+  tapBtn.onclick = () => {
+    let earned = moneyPerTap;
+    if (multiplierActive) earned *= 2;
+
+    money += earned;
+    updateMoneyDisplay();
+    updateUpgrades();
+  };
+
+  // Buy upgrade
+  function buyUpgrade(id) {
+    const upgrade = upgrades[id];
+    if (money >= upgrade.cost) {
+      if (id === 'upgradeBulk' && moneyPerTap >= upgrade.maxTaps) {
+        alert('Bulk taps upgrade is maxed out!');
+        return;
+      }
+      money -= upgrade.cost;
+      moneyPerTap += upgrade.increase;
+      if (id === 'upgradeBulk' && moneyPerTap > upgrade.maxTaps) {
+        moneyPerTap = upgrade.maxTaps;
+      }
+      updateMoneyDisplay();
+      updateUpgrades();
+      alert(`Upgrade bought! +${upgrade.increase} per tap`);
+    } else {
+      alert('Not enough money!');
+    }
+  }
+
+  for (const id in upgrades) {
+    document.getElementById(id).onclick = () => buyUpgrade(id);
+  }
+
+  // Sign in/up logic
+  signinBtn.onclick = () => {
+    const name = usernameInput.value.trim();
+    if (!name) {
+      alert("Please enter a username");
+      return;
+    }
+
+    currentUser = name;
+
+    if (!usersData[currentUser]) {
+      usersData[currentUser] = {
+        money: 0,
+        moneyPerTap: 1,
+        multiplierExpire: 0
+      };
+      alert("Welcome, new user! You get 2x money for 10 minutes!");
+      activateMultiplier(10 * 60);
+    } else {
+      money = usersData[currentUser].money;
+      moneyPerTap = usersData[currentUser].moneyPerTap;
+      if (Date.now() < usersData[currentUser].multiplierExpire) {
+        const remain = Math.floor((usersData[currentUser].multiplierExpire - Date.now()) / 1000);
+        activateMultiplier(remain);
+      }
+    }
+
+    money = usersData[currentUser].money;
+    moneyPerTap = usersData[currentUser].moneyPerTap;
+
+    signinForm.style.display = 'none';
+    welcomeMsg.style.display = 'block';
+    welcomeText.textContent = `Welcome, ${currentUser}!`;
+    updateMoneyDisplay();
+    updateUpgrades();
+  };
+
+  signoutBtn.onclick = () => {
+    saveUserData();
+    currentUser = null;
+    money = 0;
+    moneyPerTap = 1;
+    multiplierActive = false;
+    clearInterval(multiplierInterval);
+    multiplierTimerEl.textContent = '';
+
+    signinForm.style.display = 'block';
+    welcomeMsg.style.display = 'none';
+    updateMoneyDisplay();
+    updateUpgrades();
+    usernameInput.value = '';
+  };
+
+  function activateMultiplier(seconds) {
+    multiplierActive = true;
+    multiplierExpireTime = Date.now() + seconds * 1000;
+    updateMultiplierTimer();
+
+    if (multiplierInterval) clearInterval(multiplierInterval);
+
+    multiplierInterval = setInterval(() => {
+      const remain = Math.floor((multiplierExpireTime - Date.now()) / 1000);
+      if (remain <= 0) {
+        multiplierActive = false;
+        multiplierTimerEl.textContent = '';
+        clearInterval(multiplierInterval);
+      } else {
+        updateMultiplierTimer();
+      }
+    }, 1000);
+  }
+
+  function updateMultiplierTimer() {
+    const remain = Math.floor((multiplierExpireTime - Date.now()) / 1000);
+    multiplierTimerEl.textContent = `2x Money Active! Time left: ${remain}s`;
+  }
+
+  function saveUserData() {
+    if (!currentUser) return;
+    usersData[currentUser] = {
+      money: money,
+      moneyPerTap: moneyPerTap,
+      multiplierExpire: multiplierActive ? multiplierExpireTime : 0
+    };
+    localStorage.setItem('usersData', JSON.stringify(usersData));
+  }
+
+  window.addEventListener('beforeunload', saveUserData);
+
+  updateMoneyDisplay();
+  updateUpgrades();
+</script>
+
+</body>
+</html>
